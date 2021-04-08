@@ -42,3 +42,59 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 });
+
+app.post('/auth/login', (req, res) => {
+
+});
+
+app.get('/auth/logout', (req, res) => {
+
+});
+
+app.post('/users', (req, res) => {
+
+});
+
+app.patch('/users/{username}', (req, res) => {
+  
+});
+
+app.get('/users', (req, res) => {
+
+});
+
+app.get('/users/{username}', (req, res) => {
+
+});
+
+app.get('/users/{username}/picture', (req, res) => {
+
+});
+
+app.put('/users/{username}/picture', (req, res) => {
+
+});
+
+app.post('/messages', (req, res) => {
+
+});
+
+app.get('/messages/{messageId}', (req, res) => {
+
+});
+
+app.get('/messages}', (req, res) => {
+
+});
+
+app.delete('/messages/{messageId}', (req, res) => {
+
+});
+
+app.post('/likes', (req, res) => {
+
+});
+
+app.delete('/likes/{likeId}', (req, res) => {
+
+});
