@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
-    "mongodb": "^3.6.6"
+    "express-jwt": "^6.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "nanoid": "^3.1.22"
   }
 }

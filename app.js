@@ -1,8 +1,14 @@
 const express = require('express');
 const app = express();
 const port = 3000;
+const { nanoid } = require('nanoid');
+const jwt = require('jsonwebtoken');
+const secret = "Group18";
+//const mongoose = require('mongoose');
+//const MongoClient = require('mongodb').MongoClient;
 
-// const MongoClient = require('mongodb').MongoClient;
+//const Schema = mongoose.Schema;
+
 // const uri = "mongodb+srv://rdetzler:Goaway88@group-18-kapstone.kbjox.mongodb.net/kapstonebackend?retryWrites=true&w=majority";
 // const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 // client.connect(err => {
@@ -11,14 +17,67 @@ const port = 3000;
 //   client.close();
 // });
 
-app.use(express.json());
+// mongoose.connect('localhost:3000', {useNewUrlParser: true, useUnifiedTopology: true});
+// app.use(express.json());
+
+// const userSchema = new Schema({
+//   username: {
+//     type: String,
+//     required: true,
+//     minLength: 3,
+//     maxLength: 20,
+//   },
+//   displayName: {
+//     type: String,
+//     required: true,
+//     minLength: 3,
+//     maxLength: 20,
+//   },
+//   password: {
+//     type: String,
+//     required: true,
+//     minLength: 3,
+//     maxLength: 20,
+//   },
+//   about: {
+//     type: String,
+//     minLength: 1,
+//     maxLength: 200,
+//   },
+//   id: {
+//     type: String,
+//     default: () => nanoid()
+//   },
+// });
+
+// const messageSchema = new Schema({
+//   id: {
+//     type: String,
+//     default: () => nanoid()
+//   },
+//   text: {
+//     type: String,
+//     maxLength: 200,
+//     minLength: 1,
+//   },
+//   username: {
+//     type: String,
+//     minLength: 3,
+//     maxLength: 20,
+//   },
+//   likes: {
+//     type: Number,
+//   },
+// });
 
 let db = {
-  "users":[
-    {pictureLocation:null,username:"ryantest",displayName:"test",about:"",createdAt:"2021-04-08T13:45:46.358Z",updatedAt:"2021-04-08T13:45:46.358Z"},
-    {pictureLocation:null,username:"Johnny",displayName:"Johnny",about:"",createdAt:"2021-04-05T15:14:51.302Z",updatedAt:"2021-04-05T15:14:51.302Z"},
-    {pictureLocation:null,username:"ooss",displayName:"ssss",about:"",createdAt:"2021-03-31T14:53:36.426Z",updatedAt:"2021-03-31T14:53:36.426Z"},
-  ]};
+  users:[
+    {pictureLocation:null, username:"ryantest", password: "1234", displayName:"test", about:"", token: ""},
+    {pictureLocation:null, username:"Johnny", password: "1235", displayName:"Johnny", about:"", token: ""},
+    {pictureLocation:null, username:"ooss", password: "1236", displayName:"ssss", about:"", token: ""},
+  ],
+  messages:[],
+};
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -34,6 +93,8 @@ app.use(function (req, res, next) {
   next();
 });
 
+app.use(express.json());
+
 app.get('/', (req, res) => {
   console.log("get request received")
   res.send('Hello World!')
@@ -43,8 +104,24 @@ app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 });
 
-app.post('/auth/login', (req, res) => {
+function checkAuth(req, res, next) {
+  next()
+};
 
+app.post('/auth/login', (req, res) => {
+  const {username, password} = req.body
+  const user = db.users.find((u) => {
+    return u.username === username
+  });
+  if (user.password === password) {
+    const index = db.users.findIndex((u) => {
+      return u.id === user.id
+    });
+    const token = jwt.sign({  foo: 'bar' }, secret);
+    db.users[index].token = token
+
+    res.send(token);
+  }
 });
 
 app.get('/auth/logout', (req, res) => {
@@ -76,11 +153,17 @@ app.put('/users/{username}/picture', (req, res) => {
 });
 
 app.post('/messages', (req, res) => {
-
+  const message = {
+    text: req.body.text,
+    id: nanoid(),
+  };
+  db.messages.push(message);
+  res.status(201).json(message);
 });
 
-app.get('/messages/{messageId}', (req, res) => {
-
+app.get('/messages/:messageId', (req, res) => {
+  const selectedMessage = db.messages.find((message) => message.id == req.params.messageId);
+    res.json(selectedMessage);
 });
 
 app.get('/messages}', (req, res) => {
