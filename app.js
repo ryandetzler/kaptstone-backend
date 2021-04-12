@@ -109,7 +109,7 @@ function checkAuth(req, res, next) {
 };
 
 app.post('/auth/login', (req, res) => {
-  const {username, password} = req.body
+  const {username, password} = req.body;
   const user = db.users.find((u) => {
     return u.username === username
   });
@@ -122,17 +122,39 @@ app.post('/auth/login', (req, res) => {
 
     res.send(token);
   }
+  res.status(401);
 });
 
 app.get('/auth/logout', (req, res) => {
-
+  const username = req.body;
+  const user = db.users.find((u) => {
+    return u.username === username
+  });
+  const index = db.users.findIndex((u) => {
+    return u.id === user.id
+  });
+  db.users[index].token = "";
+  res.send(token);
 });
 
 app.post('/users', (req, res) => {
-
+  const {username, displayName, password} = req.body;
+  const newUser = {
+    username: username,
+    displayName: displayName,
+    password: password,
+  };
+  const user = db.users.find((u) => {
+    if(u.username === username) {
+      res.status(400).send('username already taken')
+    } else {
+      db.users.push(newUser)
+    };
+  });
+  res.status(201)
 });
 
-app.patch('/users/{username}', (req, res) => {
+app.patch('/users/:username', (req, res) => {
   
 });
 
@@ -140,15 +162,18 @@ app.get('/users', (req, res) => {
 
 });
 
-app.get('/users/{username}', (req, res) => {
+app.get('/users/:username', (req, res) => {
+  const selectedUser = db.users.find((user) => {
+    return user.username === req.params.username
+  });
+  res.json(selectedUser)
+});
+
+app.get('/users/:username/picture', (req, res) => {
 
 });
 
-app.get('/users/{username}/picture', (req, res) => {
-
-});
-
-app.put('/users/{username}/picture', (req, res) => {
+app.put('/users/:username/picture', (req, res) => {
 
 });
 
@@ -170,7 +195,7 @@ app.get('/messages}', (req, res) => {
 
 });
 
-app.delete('/messages/{messageId}', (req, res) => {
+app.delete('/messages/:messageId', (req, res) => {
 
 });
 
@@ -178,6 +203,6 @@ app.post('/likes', (req, res) => {
 
 });
 
-app.delete('/likes/{likeId}', (req, res) => {
+app.delete('/likes/:likeId', (req, res) => {
 
 });
