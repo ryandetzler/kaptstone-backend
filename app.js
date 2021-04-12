@@ -4,77 +4,82 @@ const port = 3000;
 const { nanoid } = require('nanoid');
 const jwt = require('jsonwebtoken');
 const secret = "Group18";
-//const mongoose = require('mongoose');
-//const MongoClient = require('mongodb').MongoClient;
+const mongoose = require('mongoose');
+const MongoClient = require('mongodb').MongoClient;
 
-//const Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-// const uri = "mongodb+srv://rdetzler:Goaway88@group-18-kapstone.kbjox.mongodb.net/kapstonebackend?retryWrites=true&w=majority";
-// const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-// client.connect(err => {
-//   const collection = client.db("test").collection("devices");
-//   // perform actions on the collection object
-//   client.close();
-// });
+const uri = "mongodb+srv://rdetzler:Goaway88@group-18-kapstone.kbjox.mongodb.net/kapstonebackend?retryWrites=true&w=majority";
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+client.connect(err => {
+  const collection = client.db("test").collection("devices");
+  // perform actions on the collection object
+  client.close();
+});
 
-// mongoose.connect('localhost:3000', {useNewUrlParser: true, useUnifiedTopology: true});
-// app.use(express.json());
+mongoose.connect('localhost:27017/test', {useNewUrlParser: true, useUnifiedTopology: true});
+app.use(express.json());
 
-// const userSchema = new Schema({
-//   username: {
-//     type: String,
-//     required: true,
-//     minLength: 3,
-//     maxLength: 20,
-//   },
-//   displayName: {
-//     type: String,
-//     required: true,
-//     minLength: 3,
-//     maxLength: 20,
-//   },
-//   password: {
-//     type: String,
-//     required: true,
-//     minLength: 3,
-//     maxLength: 20,
-//   },
-//   about: {
-//     type: String,
-//     minLength: 1,
-//     maxLength: 200,
-//   },
-//   id: {
-//     type: String,
-//     default: () => nanoid()
-//   },
-// });
+const User = mongoose.model('User', {
+  username: {
+    type: String,
+    required: true,
+    minLength: 3,
+    maxLength: 20,
+    unique: true,
+  },
+  displayName: {
+    type: String,
+    required: true,
+    minLength: 3,
+    maxLength: 20,
+  },
+  password: {
+    type: String,
+    required: true,
+    minLength: 3,
+    maxLength: 20,
+  },
+  about: {
+    type: String,
+    minLength: 1,
+    maxLength: 200,
+  },
+  id: {
+    type: String,
+    default: () => nanoid(),
+  },
+  token: {
+    type: String,
+    default: "",
+  },
+});
 
-// const messageSchema = new Schema({
-//   id: {
-//     type: String,
-//     default: () => nanoid()
-//   },
-//   text: {
-//     type: String,
-//     maxLength: 200,
-//     minLength: 1,
-//   },
-//   username: {
-//     type: String,
-//     minLength: 3,
-//     maxLength: 20,
-//   },
-//   likes: {
-//     type: Number,
-//   },
-// });
+const messageSchema = new Schema({
+  id: {
+    type: String,
+    default: () => nanoid()
+  },
+  text: {
+    type: String,
+    maxLength: 200,
+    minLength: 1,
+  },
+  username: {
+    type: String,
+    minLength: 3,
+    maxLength: 20,
+  },
+  likes: {
+    type: Number,
+  },
+});
 
 let db = {
   users:[
-    {pictureLocation:null, username:"ryantest", password: "1234", displayName:"test", about:"", token: ""},
-    {pictureLocation:null, username:"Johnny", password: "1235", displayName:"Johnny", about:"", token: ""},
-    {pictureLocation:null, username:"ooss", password: "1236", displayName:"ssss", about:"", token: ""},
+    {pictureLocation:null, username:"ryantest", password: "1234", displayName:"test", id: "1", about:"", token: ""},
+    {pictureLocation:null, username:"Johnny", password: "1235", displayName:"Johnny", id: "2", about:"", token: ""},
+    {pictureLocation:null, username:"ooss", password: "1236", displayName:"ssss", id: "3", about:"", token: ""},
   ],
   messages:[],
 };
@@ -139,27 +144,21 @@ app.get('/auth/logout', (req, res) => {
 
 app.post('/users', (req, res) => {
   const {username, displayName, password} = req.body;
-  const newUser = {
-    username: username,
-    displayName: displayName,
-    password: password,
-  };
-  const user = db.users.find((u) => {
-    if(u.username === username) {
-      res.status(400).send('username already taken')
-    } else {
-      db.users.push(newUser)
-    };
+  const newUser = new User (req.body);
+  user.save().then(() => {
+    res.json(user)
+  }).catch((err) => {
+    res.status(400).send(err)
   });
-  res.status(201)
 });
 
 app.patch('/users/:username', (req, res) => {
   
 });
 
-app.get('/users', (req, res) => {
-
+app.get('/users', async (req, res) => {
+  const users = await User.find({});
+  res.json(users)
 });
 
 app.get('/users/:username', (req, res) => {
