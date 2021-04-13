@@ -4,12 +4,9 @@ const port = 3000;
 const { nanoid } = require('nanoid');
 const jwt = require('jsonwebtoken');
 const secret = "Group18";
-const mongoose = require('mongoose');
+
 const MongoClient = require('mongodb').MongoClient;
-
-const Schema = mongoose.Schema;
-
-const uri = "mongodb+srv://rdetzler:Goaway88@group-18-kapstone.kbjox.mongodb.net/kapstonebackend?retryWrites=true&w=majority";
+const uri = "mongodb+srv://detzlerryan@gmail.com:kapstone18@group-18-kapstone.kbjox.mongodb.net/db?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect(err => {
   const collection = client.db("test").collection("devices");
@@ -17,7 +14,8 @@ client.connect(err => {
   client.close();
 });
 
-mongoose.connect('localhost:27017/test', {useNewUrlParser: true, useUnifiedTopology: true});
+const mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost:27017/test', {useNewUrlParser: true, useUnifiedTopology: true});
 app.use(express.json());
 
 const User = mongoose.model('User', {
@@ -55,24 +53,24 @@ const User = mongoose.model('User', {
   },
 });
 
-const messageSchema = new Schema({
-  id: {
-    type: String,
-    default: () => nanoid()
+const Message = mongoose.model('Message', {
+    id: {
+      type: String,
+      default: () => nanoid()
+    },
+    text: {
+      type: String,
+      maxLength: 200,
+      minLength: 1,
   },
-  text: {
-    type: String,
-    maxLength: 200,
-    minLength: 1,
-  },
-  username: {
-    type: String,
-    minLength: 3,
-    maxLength: 20,
-  },
-  likes: {
-    type: Number,
-  },
+    username: {
+      type: String,
+      minLength: 3,
+      maxLength: 20,
+    },
+    likes: {
+      type: Number,
+    },
 });
 
 let db = {
