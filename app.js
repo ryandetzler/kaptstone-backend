@@ -5,6 +5,7 @@ const { nanoid } = require('nanoid');
 const jwt = require('jsonwebtoken');
 const secret = "Group18";
 
+//mongodb starter code, copied and pasted from their site
 const MongoClient = require('mongodb').MongoClient;
 const uri = "mongodb+srv://detzlerryan@gmail.com:kapstone18@group-18-kapstone.kbjox.mongodb.net/db?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -14,10 +15,12 @@ client.connect(err => {
   client.close();
 });
 
+//mongoose start from their site
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost:27017/test', {useNewUrlParser: true, useUnifiedTopology: true});
 app.use(express.json());
 
+//set up models for user and message using mongoose
 const User = mongoose.model('User', {
   username: {
     type: String,
@@ -73,15 +76,7 @@ const Message = mongoose.model('Message', {
     },
 });
 
-let db = {
-  users:[
-    {pictureLocation:null, username:"ryantest", password: "1234", displayName:"test", id: "1", about:"", token: ""},
-    {pictureLocation:null, username:"Johnny", password: "1235", displayName:"Johnny", id: "2", about:"", token: ""},
-    {pictureLocation:null, username:"ooss", password: "1236", displayName:"ssss", id: "3", about:"", token: ""},
-  ],
-  messages:[],
-};
-
+//middleware from Peter Mayor demo
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
@@ -108,7 +103,23 @@ app.listen(port, () => {
 });
 
 function checkAuth(req, res, next) {
-  next()
+  try{
+    /*request is sent as "bearer token", need to slice out the space
+    between bearer and the token to accurately check for the token*/    
+    const token = req.headers.authorization?.slice(7) || ''
+    //use jwt.verify to verify the token, if token is incorrect this should return false
+    let decoded = jwt.verify(token, secret);
+    //if decoded === true, use next to continue on to the next function
+    if (decoded) {
+      next()
+      //else send 401 status
+    } else {
+      res.sendStatus(401)
+    };
+    //use a catch to send 401 error status and message if any preceding code fails
+  } catch(err) {
+    res.status(401).send(err.message)
+  };
 };
 
 app.post('/auth/login', (req, res) => {
