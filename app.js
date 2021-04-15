@@ -50,6 +50,15 @@ const User = mongoose.model('User', {
     type: String,
     default: "",
   },
+  pictureLocation: {
+    type: String,
+    defaut: "",
+  },
+  friends: {
+    username: {
+      type: String,
+    },
+  },
 });
 
 const Message = mongoose.model('Message', {
@@ -57,31 +66,37 @@ const Message = mongoose.model('Message', {
       type: String,
       maxLength: 200,
       minLength: 1,
-  },
+    },
     username: {
       type: String,
       minLength: 3,
       maxLength: 20,
     },
-    likes: {
-      type: Number,
+    like: {
+      username: {
+        type: String,
+        default: []
+      },
+      messageId: {
+        type: Number
+      },
     },
 });
 
 //middleware from Peter Mayor demo
-// app.use(function (req, res, next) {
-//   res.header("Access-Control-Allow-Origin", "*");
-//   res.header(
-//     "Access-Control-Allow-Headers",
-//     "Origin, X-Requested-With, Content-Type, Accept"
-//   );
-//   res.header(
-//     "Access-Control-Allow-methods",
-//     "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-//   );
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  res.header(
+    "Access-Control-Allow-methods",
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+  );
 
-//   next();
-// });
+  next();
+});
 
 app.use(express.json());
 
@@ -124,7 +139,7 @@ app.post('/auth/login', async (req, res) => {
 
   if (user.password === password) {
     const token = jwt.sign({  foo: 'bar' }, secret);
-    const updatedUser = await User.updateOne({ username }, {token} );
+    const updatedUser = await User.updateOne({ username }, { token } );
 
     res.send(updatedUser);
   }
@@ -133,7 +148,6 @@ app.post('/auth/login', async (req, res) => {
 
 app.get('/auth/logout', checkAuth, async (req, res) => {
   const username = req.body;
-  const user = await User.findOne({ username }).exec();
   
   const token = "";
   const updatedUser = await User.updateOne({ username }, { token });
@@ -150,8 +164,14 @@ app.post('/users', (req, res) => {
   });
 });
 
-app.patch('/users/:username', (req, res) => {
-  
+app.patch('/users/:username', async (req, res) => {
+  const username = req.params.username;
+  const update = req.body;
+  console.log(update)
+
+  const user = await User.findOne({ username }).exec();
+  const updatedUser = await User.findOneAndUpdate({ user }, update, { new: true });
+  res.status(201).send(updatedUser);
 });
 
 app.get('/users', async (req, res) => {
@@ -170,8 +190,15 @@ app.get('/users/:username/picture', (req, res) => {
 
 });
 
-app.put('/users/:username/picture', (req, res) => {
+//  --------------in progress----------------
+app.put('/users/:username/picture', async (req, res) => {
+  const username = req.params.username;
+  picture = req.body;
+  console.log(picture);
 
+  const user = await User.findOne({ username }).exec();
+  const updatedUser = await User.findOneAndUpdate({ user }, picture, {new: true});
+  res.status(201).send(updatedUser);
 });
 
 app.post('/messages', (req, res) => {
@@ -183,6 +210,11 @@ app.post('/messages', (req, res) => {
   });
 });
 
+app.get('/messages', async (req, res) => {
+  const messages = await Message.find({});
+  res.json(messages)
+});
+
 app.get('/messages/:messageId', async (req, res) => {
   const messageId = req.params.messageId;
   const message = await Message.findById(messageId).exec();
@@ -190,16 +222,19 @@ app.get('/messages/:messageId', async (req, res) => {
   res.json(message);
 });
 
-app.get('/messages}', (req, res) => {
+app.delete('/messages/:messageId', async (req, res) => {
+  try {
+    const messageId = Mongoose.Types.ObjectId(req.params.messageId);
+    Message.findByIdAndDelete(messageId);
 
-});
-
-app.delete('/messages/:messageId', (req, res) => {
-
+    res.status(200)
+  } catch (err){
+    res.status(400).send(err)
+  };
 });
 
 app.post('/likes', (req, res) => {
-
+ 
 });
 
 app.delete('/likes/:likeId', (req, res) => {
