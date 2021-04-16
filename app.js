@@ -73,13 +73,8 @@ const Message = mongoose.model('Message', {
       maxLength: 20,
     },
     like: {
-      username: {
-        type: String,
-        default: []
-      },
-      messageId: {
-        type: Number
-      },
+      type: Array,
+      of: Object,
     },
 });
 
@@ -224,7 +219,7 @@ app.get('/messages/:messageId', async (req, res) => {
 
 app.delete('/messages/:messageId', async (req, res) => {
   try {
-    const messageId = Mongoose.Types.ObjectId(req.params.messageId);
+    const messageId = mongoose.Types.ObjectId(req.params.messageId);
     Message.findByIdAndDelete(messageId);
 
     res.status(200)
@@ -233,10 +228,27 @@ app.delete('/messages/:messageId', async (req, res) => {
   };
 });
 
-app.post('/likes', (req, res) => {
- 
+app.post('/likes', async (req, res) => {
+  const messageId = req.body.messageId;
+  const username = req.body.username;
+  const id = mongoose.Types.ObjectId();
+  const message = await Message.findById(messageId).exec();
+  const newLike = {
+    _id: id,
+     username: username,
+     messageId: messageId,
+  };
+  
+  await message.like.push(newLike);
+  await message.save();
+  res.status(201).send(newLike);
 });
 
-app.delete('/likes/:likeId', (req, res) => {
-
+app.delete('/likes/:likeId', async (req, res) => {
+  const likeId = mongoose.Types.ObjectId(req.params.likeId);
+  const message = await Message.findOne({ "like._id": likeId })
+  const deletedLike = message.like.find(x => x._id == req.params.likeId)
+  await message.like.pull(deletedLike)
+  message.save()
+  res.status(200).send(message);
 });
