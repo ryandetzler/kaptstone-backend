@@ -55,9 +55,8 @@ const User = mongoose.model('User', {
     defaut: "",
   },
   friends: {
-    username: {
-      type: String,
-    },
+    type: Array,
+    of: String,
   },
 });
 
@@ -127,18 +126,20 @@ function checkAuth(req, res, next) {
 app.post('/auth/login', async (req, res) => {
   const {username, password} = req.body;
   const user = await User.findOne({ username }).exec();
-
   if (!user) {
     res.status(400);
-    };
-
+  };
+  
   if (user.password === password) {
-    const token = jwt.sign({  foo: 'bar' }, secret);
-    const updatedUser = await User.updateOne({ username }, { token } );
-
-    res.send(updatedUser);
+    let token = jwt.sign({  foo: 'bar' }, secret);
+    //const updatedUser = await User.findOneAndUpdate({ username }, { token } ).exec();
+    user.token = token;
+    user.save();
+    res.status(200).send(user);
+    token = "";
   }
   res.status(401)
+  token = "";
 });
 
 app.get('/auth/logout', checkAuth, async (req, res) => {
@@ -150,13 +151,19 @@ app.get('/auth/logout', checkAuth, async (req, res) => {
   res.status(200).send(updatedUser)
   });
 
-app.post('/users', (req, res) => {
+app.post('/users', async (req, res) => {
   const user = new User(req.body);
-  user.save().then(() => {
-    res.json(user)
-  }).catch((err) => {
+  let token = jwt.sign({  foo: 'bar' }, secret);
+  try {
+    const newUser = await User.create( user );
+    newUser.token = token;
+    newUser.save();
+    console.log(newUser)
+    res.status(201).send(newUser)
+    token = "";
+  }catch (err) {
     res.status(400).send(err)
-  });
+  };
 });
 
 app.patch('/users/:username', async (req, res) => {
