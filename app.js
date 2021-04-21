@@ -3,6 +3,8 @@ const app = express();
 const port = 3000;
 const jwt = require('jsonwebtoken');
 const secret = "Group18";
+const fs = require('fs');
+const path = require('path');
 
 //mongodb starter code, copied and pasted from their site
 const MongoClient = require('mongodb').MongoClient;
@@ -51,6 +53,7 @@ const User = mongoose.model('User', {
     default: "",
   },
   pictureLocation: {
+    data: Buffer,
     type: String,
     defaut: "",
   },
@@ -82,7 +85,7 @@ app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
     "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
   res.header(
     "Access-Control-Allow-methods",
@@ -91,8 +94,15 @@ app.use(function (req, res, next) {
 
   next();
 });
-
 app.use(express.json());
+const multer = require('multer');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, file.fieldname + '-' + Date.now())
+  }
+});
+const upload = multer({ storage: storage });
+app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
   console.log("get request received")
@@ -169,7 +179,6 @@ app.post('/users', async (req, res) => {
 app.patch('/users/:username', async (req, res) => {
   const username = req.params.username;
   const update = req.body;
-  console.log(update)
 
   const user = await User.findOne({ username }).exec();
   const updatedUser = await User.findOneAndUpdate({ user }, update, { new: true });
@@ -178,29 +187,39 @@ app.patch('/users/:username', async (req, res) => {
 
 app.get('/users', async (req, res) => {
   const users = await User.find({});
-  res.json(users)
+  console.log(users)
+  res.status(200).send(users)
 });
 
 app.get('/users/:username', async (req, res) => {
   const username = req.params.username;
   const user = await User.findOne({ username }).exec();
 
-  res.json(user)
+  res.send(user)
 });
 
-app.get('/users/:username/picture', (req, res) => {
-
+app.get('/users/:username/picture', async (req, res) => {
+  const username = req.params.username;
+  const user = await User.findOne({ username }).exec();
+  const picture = user.pictureLocation;
+  res.send(picture);
 });
 
 //  --------------in progress----------------
-app.put('/users/:username/picture', async (req, res) => {
-  const username = req.params.username;
-  picture = req.body;
-  console.log(picture);
-
+app.put('/users/:username/picture', upload.single('image'), async (req, res) => {
+  const name = req.params.username;
+  const picture = {
+    username: name,
+    img:{
+      data: fs.readFileSync(path.join(__dirname + '/uploads/'+req.file.filename)),
+      contentType: 'image/png'
+    }
+  }
+  console.log(picture)
   const user = await User.findOne({ username }).exec();
-  const updatedUser = await User.findOneAndUpdate({ user }, picture, {new: true});
-  res.status(201).send(updatedUser);
+  user.pictureLocation = picture;
+  user.save()
+  res.status(201).send(user);
 });
 
 app.post('/messages', (req, res) => {
@@ -214,7 +233,7 @@ app.post('/messages', (req, res) => {
 
 app.get('/messages', async (req, res) => {
   const messages = await Message.find({});
-  res.json(messages)
+  res.send(messages)
 });
 
 app.get('/messages/:messageId', async (req, res) => {
@@ -227,9 +246,9 @@ app.get('/messages/:messageId', async (req, res) => {
 app.delete('/messages/:messageId', async (req, res) => {
   try {
     const messageId = mongoose.Types.ObjectId(req.params.messageId);
-    Message.findByIdAndDelete(messageId);
+    await Message.findByIdAndDelete(messageId);
 
-    res.status(200)
+    res.status(200).send("deleted")
   } catch (err){
     res.status(400).send(err)
   };
@@ -245,7 +264,7 @@ app.post('/likes', async (req, res) => {
      username: username,
      messageId: messageId,
   };
-  
+  console.log(newLike)
   await message.like.push(newLike);
   await message.save();
   res.status(201).send(newLike);
