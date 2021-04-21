@@ -153,11 +153,13 @@ app.post('/auth/login', async (req, res) => {
 
 app.get('/auth/logout', checkAuth, async (req, res) => {
   const username = req.body;
-  
   const token = "";
-  const updatedUser = await User.updateOne({ username }, { token });
-
-  res.status(200).send(updatedUser)
+  try{
+    const updatedUser = await User.updateOne({ username }, { token });
+    res.status(200).send(updatedUser)
+    } catch(err){
+      res.status(401).send(err.message)
+    }
   });
 
 app.post('/users', async (req, res) => {
@@ -294,6 +296,7 @@ app.post('/likes', async (req, res) => {
 
 app.delete('/likes/:likeId', async (req, res) => {
   const likeId = mongoose.Types.ObjectId(req.params.likeId);
+  console.log(likeId)
   const message = await Message.findOne({ "like._id": likeId })
   const deletedLike = message.like.find(like => like._id == req.params.likeId)
   await message.like.pull(deletedLike)
