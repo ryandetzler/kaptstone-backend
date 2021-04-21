@@ -156,9 +156,9 @@ app.get('/auth/logout', checkAuth, async (req, res) => {
   try{
     const updatedUser = await User.updateOne({ username }, { token });
     res.status(200).send(updatedUser)
-    } catch(err){
-      res.status(401).send(err.message)
-    }
+  } catch(err){
+    res.status(401).send(err.message)
+  }
   });
 
 app.post('/users', async (req, res) => {
@@ -171,55 +171,78 @@ app.post('/users', async (req, res) => {
     res.status(201).send(newUser)
     token = "";
   }catch (err) {
-    res.status(400).send(err)
+    res.status(400).send(err.message)
   };
 });
 
 app.patch('/users/:username', async (req, res) => {
   const username = req.params.username;
   const update = req.body;
-
-  const user = await User.findOne({ username }).exec();
-  const updatedUser = await User.findOneAndUpdate({ user }, update, { new: true });
-  res.status(201).send(updatedUser);
-});
+  try{
+    const user = await User.findOne({ username }).exec();
+    const updatedUser = await User.findOneAndUpdate({ user }, update, { new: true });
+    res.status(201).send(updatedUser);
+  }catch (err) {
+    res.status(400).send(err.message)
+  }
+  });
 
 app.get('/users', async (req, res) => {
-  const users = await User.find({});
-  res.status(200).send(users)
+  try{
+    const users = await User.find({});
+    res.status(200).send(users)
+  } catch (err) {
+    res.status(400).send(err.message)
+  };
 });
 
 app.get('/users/:username', async (req, res) => {
   const username = req.params.username;
-  const user = await User.findOne({ username }).exec();
+  try{
+    const user = await User.findOne({ username }).exec();
 
-  res.status(200).send(user)
+    res.status(200).send(user)
+  }catch (err) {
+    res.status(400).send(err.message)
+  };
 });
 
 app.get('/friends/:username', async (req, res) => {
   const username = req.params.username;
-  const user = await User.findOne({ username }).exec();
-  const friendsList = user.friends;
-  res.send(friendsList);
+  try{
+    const user = await User.findOne({ username }).exec();
+    const friendsList = user.friends;
+    res.send(friendsList);
+  } catch(err){
+    res.status(400).send(err.message)
+  }
 })
 
 app.post('/friends/:username', async (req, res) => {
   const username = req.params.username;
-  const user = await User.findOne({ username }).exec();
-  const newFriend = req.body.friend
-  user.friends.push(newFriend)
-  user.save()
-  res.status(201).send(user)
+  try{
+    const user = await User.findOne({ username }).exec();
+    const newFriend = req.body.friend
+    user.friends.push(newFriend)
+    user.save()
+    res.status(201).send(user)
+  } catch(err){
+    res.status(400).send(err.message)
+  }
 })
 
 app.delete('/friends/:username', async (req, res) => {
   const username = req.params.username;
   const friend = req.body.friend;
-  const user = await User.findOne({ username });
-  const removedFriend = user.friends.find(target => target.friend == friend);
-  await user.friends.pull(removedFriend);
-  user.save()
-  res.status(200).send(user)
+  try{
+    const user = await User.findOne({ username });
+    const removedFriend = user.friends.find(target => target.friend == friend);
+    await user.friends.pull(removedFriend);
+    user.save()
+    res.status(200).send(user)
+  } catch(err){
+    res.status(400).send(err.message)
+  }
 })
 // app.get('/users/:username/picture', async (req, res) => {
 //   const username = req.params.username;
@@ -246,24 +269,36 @@ app.delete('/friends/:username', async (req, res) => {
 // });
 
 app.post('/messages', (req, res) => {
-  const message = new Message(req.body)
-  message.save().then(() => {
-    res.json(message)
-  }).catch((err) => {
-    res.status(400).send(err)
-  });
+  try{
+    const message = new Message(req.body)
+    message.save().then(() => {
+      res.json(message)
+    }).catch((err) => {
+      res.status(400).send(err)
+    });
+  } catch(err){
+    res.status(40).send(err.message)
+  }
 });
 
 app.get('/messages', async (req, res) => {
-  const messages = await Message.find({});
-  res.send(messages)
+  try{
+    const messages = await Message.find({});
+    res.send(messages)
+  } catch(err){
+    res.status(400).send(err.message)
+  }
 });
 
 app.get('/messages/:messageId', async (req, res) => {
   const messageId = req.params.messageId;
-  const message = await Message.findById(messageId).exec();
+  try{
+    const message = await Message.findById(messageId).exec();
 
-  res.json(message);
+    res.json(message);
+  } catch(err){
+    res.status(400).send(err.message)
+  }
 });
 
 app.delete('/messages/:messageId', async (req, res) => {
@@ -280,25 +315,32 @@ app.delete('/messages/:messageId', async (req, res) => {
 app.post('/likes', async (req, res) => {
   const messageId = req.body.messageId;
   const username = req.body.username;
-  const id = mongoose.Types.ObjectId();
-  const message = await Message.findById(messageId).exec();
-  const newLike = {
-    _id: id,
-     username: username,
-     messageId: messageId,
-  };
-  
-  await message.like.push(newLike);
-  await message.save();
-  res.status(201).send(newLike);
+  try{
+    const id = mongoose.Types.ObjectId();
+    const message = await Message.findById(messageId).exec();
+    const newLike = {
+      _id: id,
+      username: username,
+      messageId: messageId,
+    };
+    
+    await message.like.push(newLike);
+    await message.save();
+    res.status(201).send(newLike);
+  } catch(err){
+    res.status(400).send(err.message)
+  }
 });
 
 app.delete('/likes/:likeId', async (req, res) => {
   const likeId = mongoose.Types.ObjectId(req.params.likeId);
-  console.log(likeId)
-  const message = await Message.findOne({ "like._id": likeId })
-  const deletedLike = message.like.find(like => like._id == req.params.likeId)
-  await message.like.pull(deletedLike)
-  message.save()
-  res.status(200).send(message);
+  try{
+    const message = await Message.findOne({ "like._id": likeId })
+    const deletedLike = message.like.find(like => like._id == req.params.likeId)
+    await message.like.pull(deletedLike)
+    message.save()
+    res.status(200).send(message);
+  } catch(err){
+    res.status(400).send(err.message)
+  }
 });
