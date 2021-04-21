@@ -33,7 +33,6 @@ const User = mongoose.model('User', {
   },
   displayName: {
     type: String,
-    required: true,
     minLength: 3,
     maxLength: 20,
   },
