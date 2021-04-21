@@ -59,7 +59,6 @@ const User = mongoose.model('User', {
   },
   friends: {
     type: Array,
-    of: String,
   },
 });
 
@@ -95,14 +94,14 @@ app.use(function (req, res, next) {
   next();
 });
 app.use(express.json());
-const multer = require('multer');
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, file.fieldname + '-' + Date.now())
-  }
-});
-const upload = multer({ storage: storage });
-app.set('view engine', 'ejs');
+// const multer = require('multer');
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, file.fieldname + '-' + Date.now())
+//   }
+// });
+// const upload = multer({ storage: storage });
+// app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
   console.log("get request received")
@@ -168,7 +167,6 @@ app.post('/users', async (req, res) => {
     const newUser = await User.create( user );
     newUser.token = token;
     newUser.save();
-    console.log(newUser)
     res.status(201).send(newUser)
     token = "";
   }catch (err) {
@@ -187,7 +185,6 @@ app.patch('/users/:username', async (req, res) => {
 
 app.get('/users', async (req, res) => {
   const users = await User.find({});
-  console.log(users)
   res.status(200).send(users)
 });
 
@@ -195,32 +192,57 @@ app.get('/users/:username', async (req, res) => {
   const username = req.params.username;
   const user = await User.findOne({ username }).exec();
 
-  res.send(user)
+  res.status(200).send(user)
 });
 
-app.get('/users/:username/picture', async (req, res) => {
+app.get('/friends/:username', async (req, res) => {
   const username = req.params.username;
   const user = await User.findOne({ username }).exec();
-  const picture = user.pictureLocation;
-  res.send(picture);
-});
+  const friendsList = user.friends;
+  res.send(friendsList);
+})
 
-//  --------------in progress----------------
-app.put('/users/:username/picture', upload.single('image'), async (req, res) => {
-  const name = req.params.username;
-  const picture = {
-    username: name,
-    img:{
-      data: fs.readFileSync(path.join(__dirname + '/uploads/'+req.file.filename)),
-      contentType: 'image/png'
-    }
-  }
-  console.log(picture)
+app.post('/friends/:username', async (req, res) => {
+  const username = req.params.username;
   const user = await User.findOne({ username }).exec();
-  user.pictureLocation = picture;
+  const newFriend = req.body.friend
+  user.friends.push(newFriend)
   user.save()
-  res.status(201).send(user);
-});
+  res.status(201).send(user)
+})
+
+app.delete('/friends/:username', async (req, res) => {
+  const username = req.params.username;
+  const friend = req.body.friend;
+  const user = await User.findOne({ username });
+  const removedFriend = user.friends.find(target => target.friend == friend);
+  await user.friends.pull(removedFriend);
+  user.save()
+  res.status(200).send(user)
+})
+// app.get('/users/:username/picture', async (req, res) => {
+//   const username = req.params.username;
+//   const user = await User.findOne({ username }).exec();
+//   const picture = user.pictureLocation;
+//   res.send(picture);
+// });
+
+// //  --------------in progress----------------
+// app.put('/users/:username/picture', upload.single('image'), async (req, res) => {
+//   const name = req.params.username;
+//   const picture = {
+//     username: name,
+//     img:{
+//       data: fs.readFileSync(path.join(__dirname + '/uploads/'+req.file.filename)),
+//       contentType: 'image/png'
+//     }
+//   }
+//   console.log(picture)
+//   const user = await User.findOne({ username }).exec();
+//   user.pictureLocation = picture;
+//   user.save()
+//   res.status(201).send(user);
+// });
 
 app.post('/messages', (req, res) => {
   const message = new Message(req.body)
@@ -264,7 +286,7 @@ app.post('/likes', async (req, res) => {
      username: username,
      messageId: messageId,
   };
-  console.log(newLike)
+  
   await message.like.push(newLike);
   await message.save();
   res.status(201).send(newLike);
@@ -273,7 +295,7 @@ app.post('/likes', async (req, res) => {
 app.delete('/likes/:likeId', async (req, res) => {
   const likeId = mongoose.Types.ObjectId(req.params.likeId);
   const message = await Message.findOne({ "like._id": likeId })
-  const deletedLike = message.like.find(x => x._id == req.params.likeId)
+  const deletedLike = message.like.find(like => like._id == req.params.likeId)
   await message.like.pull(deletedLike)
   message.save()
   res.status(200).send(message);
