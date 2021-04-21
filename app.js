@@ -173,13 +173,10 @@ app.post('/users', async (req, res) => {
 app.patch('/users/:username', async (req, res) => {
   const username = req.params.username;
   const update = req.body;
-  console.log(update)
   try{
     const user = await User.findOne({ username }).exec();
-    console.log(user)
     user.about = update.about;
     user.save()
-    console.log(user)
     res.status(201).send(user);
   }catch (err) {
     res.status(400).send(err.message)
