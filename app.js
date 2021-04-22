@@ -88,6 +88,7 @@ app.use(function (req, res, next) {
     "Access-Control-Allow-methods",
     "GET, POST, OPTIONS, PUT, PATCH, DELETE"
   );
+  res.set({'Access-Control-Allow-Origin': '*',})
 
   next();
 });
